@@ -89,6 +89,7 @@ class UCAS():
             'remember': 'checked'
         }
         data2 = "deptIds=910&deptIds=911&deptIds=957&deptIds=912&deptIds=928&deptIds=913&deptIds=914&deptIds=921&deptIds=951&deptIds=952&deptIds=958&deptIds=917&deptIds=945&deptIds=927&deptIds=964&deptIds=915&deptIds=954&deptIds=955&deptIds=959&deptIds=946&deptIds=961&deptIds=962&deptIds=963&sb=0"
+        data3 = "deptIds=910&deptIds=911&deptIds=957&deptIds=912&deptIds=928&deptIds=913&deptIds=914&deptIds=921&deptIds=951&deptIds=952&deptIds=958&deptIds=917&deptIds=945&deptIds=927&deptIds=964&deptIds=915&deptIds=954&deptIds=955&deptIds=959&deptIds=946&deptIds=961&deptIds=962&deptIds=963"
         url1 = "http://onestop.ucas.ac.cn/"
         url2 = "http://onestop.ucas.ac.cn/Ajax/Login/0"
 
@@ -134,6 +135,7 @@ class UCAS():
             else:
                 raise Exception('【WARNING】暂停程序')
 
+        print '【INFO】开始查询课程ID'
         # 根据课程号查询课程ID
         ids = []
         for item in self.course:
@@ -145,12 +147,12 @@ class UCAS():
                 sys.stderr.write('【ERROR】课程号设置有误，其余课程继续抢课\n')
                 ids += [None]
 
+        print '【INFO】课程信息查询成功'
         # 抢课POST data生成
-        data3 = data2
-        for i in ids:
+        for j,i in enumerate(ids):
             if not i == None:
                 data3 += "&sids=" + i
-                data3 += ("&did_" + i + "=" + i) if self.course[1] else ""
+                data3 += ("&did_" + i + "=" + i) if self.course[j][1] else ""
 
         self.url8 = "http://jwxk.ucas.ac.cn/courseManage/saveCourse?s=" + tmp
         self.spider = spider
@@ -175,14 +177,14 @@ class UCAS():
         # 读取抢课结果
         info_success = re.findall("class\=\"success\"\>(.*)\<", spider.doc)[0]
         info_error = re.findall("class\=\"error\"\>(.*)\<", spider.doc)[0]
-        if info_success:
-            print '【教务】【ERROR】' + info_success
+        if info_success and not self.over:
+            print '【教务】【SUCCESS】' + info_success
             self.success = True
             self.over = True
-        if info_error:
+        if info_error and not self.over:
             if not self.errInfo == info_error:
                 self.errInfo = info_error
-                print '【教务】【SUCCESS】' + info_error
+                print '【教务】【ERROR】' + info_error
             self.over = True
 
         self.__reduceThreadNum()
@@ -198,8 +200,9 @@ class UCAS():
             self.over = False
             try:
                 urllib2.socket.setdefaulttimeout(TIME_OUT)  # 连接超时时间(s)
+                print '【INFO】多线程启动中'
                 while not self.over:
-                    if (self.__getThreadNum() > MAX_THREAD):
+                    if (self.__getThreadNum() >= MAX_THREAD):
                         # print '线程超数等待'
                         time.sleep(0.1)
                         pass
@@ -222,8 +225,8 @@ if __name__ == '__main__':
     username = ''  # 教务登录email
     password = ''  # 教务登录password
     course = [
-        ('091M7010H', 0),
-        ('091M7004H', 1),
+        ('091M7021H', 0),
+        #('091M7010H', 1),
     ]  # 需要抢课的课程号，格式('课程号', 学位课？)，1是学位课，0是非学位课
 
     # 以下内容请不要轻易改动
